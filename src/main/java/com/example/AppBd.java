@@ -1,7 +1,5 @@
 package com.example;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import com.example.dao.ConnectionManager;
@@ -21,7 +19,11 @@ public class AppBd {
             // carregarDriverJDBC(); // não é necessário usar o JDBC diretamente
             var estadoDAO = new EstadoDAO(conn);
 
-            estadoDAO.listar();
+            var listaEstados = estadoDAO.listar();
+            for (var estado : listaEstados) {
+                System.out.println(estado);
+            }
+
             estadoDAO.localizar("MG");
             var marca = new Marca();
             marca.setId(2L);
@@ -39,7 +41,7 @@ public class AppBd {
             produtoDAO.excluir(202L);
 
             var dao = new DAO(conn);
-            dao.listar("produto");
+            //dao.listar("produto");
         } catch (SQLException e) {
             System.out.println("Não foi possível conectar-se ao banco de dados: " + e.getMessage());
         }
