@@ -4,84 +4,51 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class AppBd {
-    private static final String PASSWORD = "";
-    private static final String USERNAME = "gitpod";
-    private static final String JDBC_URL = "jdbc:postgresql://localhost/postgres";
+import com.example.dao.ConnectionManager;
+import com.example.dao.DAO;
+import com.example.model.Marca;
+import com.example.model.Produto;
+import com.example.dao.EstadoDAO;
+import com.example.dao.ProdutoDAO;
 
+public class AppBd {
     public static void main (String[] args) {
         new AppBd();
     }
     
     public AppBd() {
-        try(var conn = getConnection()) {
+        try(var conn = ConnectionManager.getConnection()) {
             // carregarDriverJDBC(); // não é necessário usar o JDBC diretamente
-            listarEstados(conn);
-            localizarEstado(conn, "MG");
-            listarDadosTabela(conn, "cliente");
+            var estadoDAO = new EstadoDAO(conn);
+
+            estadoDAO.listar();
+            estadoDAO.localizar("MG");
+            var marca = new Marca();
+            marca.setId(2L);
+            
+            var produto = new Produto();
+            produto.setId(205L);
+            produto.setMarca(marca);
+            produto.setValor(75.50);
+            produto.setNome("Produto teste 9");
+            
+            //inserirProduto(conn, produto);
+            
+            var produtoDAO = new ProdutoDAO(conn);
+            produtoDAO.alterar(produto);
+            produtoDAO.excluir(202L);
+
+            var dao = new DAO(conn);
+            dao.listar("produto");
         } catch (SQLException e) {
             System.out.println("Não foi possível conectar-se ao banco de dados: " + e.getMessage());
         }
     }
 
-    private void listarDadosTabela(Connection conn, String tabela) {
-        var sql = "SELECT * FROM " + tabela; //não será alvo de sql injection se esse campo não vier como entrada do usuário
-        try{
-            var statement = conn.createStatement();
-            var result = statement.executeQuery(sql);
-            var metadata = result.getMetaData();
-            int cols = metadata.getColumnCount();
-            
-            for (int i = 0; i < cols; i++) {
-                System.out.printf("%-20s |", metadata.getColumnName(i + 1));
-            }
-
-            System.out.println();
-            
-            while(result.next()) {
-                for (int i = 0; i < cols; i++) {
-                    System.out.printf("%-20s |", result.getString(i + 1));
-                }
-                System.out.println();
-            }
-        } catch (SQLException e) {
-            System.err.println("Erro na execução da consulta: " + e.getMessage());
-        }
-    }
-
-    private void localizarEstado(Connection conn, String uf) {
-        try{
-            //var sql = "SELECT * FROM estado WHERE uf = '" + uf + "'"; //suscetível a SQL injection
-            var sql = "SELECT * FROM estado WHERE uf = ?";
-            var statement = conn.prepareStatement(sql);
-            statement.setString(1, uf); // parâmetros começam de 1
-            var result = statement.executeQuery();
-            if(result.next()) {
-                System.out.printf("Id: %d Nome: %s UF: %s\n", result.getInt("id"), result.getString("nome"), result.getString("uf"));
-            }
-        } catch (SQLException e) {
-            System.err.println("Erro ao executar consulta SQL: " + e.getMessage());
-        }
-    }
-
-    private void listarEstados(Connection conn) {
-        try {
-            System.out.println("Conexão com o banco de dados realizada com sucesso.");
-            var statement = conn.createStatement();
-            var result = statement.executeQuery("SELECT * FROM estado");
-            while(result.next()) {
-                System.out.printf("ID: %02d --- NOME: %30s --- UF: %s\n", result.getInt("id"), result.getString("nome"), result.getString("uf"));
-            }
-        } catch (SQLException e) {
-            System.err.println("Não foi possível executar a consulta ao banco: " + e.getMessage());
-        }
-    }
-
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
-    }
-
     private void carregarDriverJDBC() {
+        /*
+         * Esta função não é necessária atualmente no JDBC. Isso é feito de forma automática.
+         */
         try {
             Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {
